@@ -52,7 +52,7 @@ You can specify multiple tags in a =:tags= keyword field.
 If a package has at least one keyword in your current profile, it will be enabled.
 *** Extracting package names from an init file
 Another functionality provided by this package is to extract a list of packages from an initialization file.
-This feature is primarily intended for Nix users.
+This feature is primarily targeted at Nix users.
 You can get a list of all packages in =use-package= forms in a file, or select packages using tags:
 
 #+begin_src emacs-lisp
