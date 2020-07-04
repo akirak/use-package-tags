@@ -49,6 +49,16 @@
       (expect (member 'test-nil result) :to-be nil)))
   (it "selects all packages when t is given as query"
     (expect (use-package-tags-select t :from "./tests/init.el")
-            :to-equal '(a b c test))))
+            :to-equal '(a b c test)))
+  (it "supports :as keyword for specifying the output"
+    (expect (use-package-tags-select t :from "./tests/init.el"
+                                     :as 'symbols)
+            :to-equal '(a b c test))
+    (expect (use-package-tags-select t :from "./tests/init.el"
+                                     :as 'strings)
+            :to-equal '("a" "b" "c" "test"))
+    (expect (use-package-tags-select t :from "./tests/init.el"
+                                     :as 'lines)
+            :to-equal "a\nb\nc\ntest")))
 
 (provide 'use-package-tag-test)

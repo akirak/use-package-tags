@@ -79,7 +79,8 @@ the conventions of use-package."
 
 ;;;; Extract package names from an init file
 
-(cl-defun use-package-tags-select (query &key from installable)
+(cl-defun use-package-tags-select (query &key from installable
+                                         (as 'symbols))
   "Get a list of packages declared in `use-package' forms.
 
 This function returns a list of package names declared in a source
@@ -96,7 +97,14 @@ You can specify a file as the source by setting FROM to its file path.
 When INSTALLABLE is set to non-nil, it returns a list of packages
 available on the Emacs-Mirror.  You will need epkg.el for this feature.
 
-The result is a list of symbols which denote packages."
+When AS is given, it converts the result to a certain type.
+It accepts the following values (the default: symbols):
+
+ * symbols: a list of symbols.
+
+ * strings: a list of strings.
+
+ * lines: a single string joined by newlines."
   (declare (indent 1))
   (let (alist
         (bufs (cl-etypecase from
@@ -167,12 +175,22 @@ The result is a list of symbols which denote packages."
             (`(:all . ,conds) (-all-p #'test-after conds))
             (`(:any . ,conds) (-any-p #'test-after conds))
             ((pred listp) (-all-p #'test-after selector))))
-         (finalize
+         (map-result
           (packages)
-          (->> (if installable
-                   (use-package-tags-map-installable packages)
-                 packages)
-               (-map #'to-symbol)))
+          (if installable
+              (use-package-tags-map-installable packages)
+            packages))
+         (convert
+          (packages)
+          (cl-ecase as
+            (symbols (-map #'to-symbol packages))
+            (strings (-map #'to-string packages))
+            (lines (mapconcat #'to-string packages "\n"))))
+         (to-string
+          (name)
+          (cl-etypecase name
+            (symbol (symbol-name name))
+            (string name)))
          (to-symbol
           (name)
           (cl-etypecase name
@@ -180,7 +198,8 @@ The result is a list of symbols which denote packages."
             (string (intern name)))))
       (->> (nreverse (-map #'car alist))
            (-filter #'enabled-p)
-           (finalize)))))
+           (map-result)
+           (convert)))))
 
 (defun use-package-tags-map-installable (packages)
   "Get a list of packages to be installed to activate PACKAGES."
