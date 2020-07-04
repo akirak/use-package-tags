@@ -83,6 +83,9 @@ You can save the result to a file:
     (save-buffer))
 #+end_src
 
-Note that the function handles some built-in keywords of =use-package= such as =:disabled= and =:if=.
-It doesn't return packages which has a non-nil =:disabled= property value or a =:if= property value that evaluates to nil.
+The function handles some built-in keywords of =use-package= to exclude packages that satisfy at least one of the following conditions:
+
+- Having a non-nil =:disabled= property.
+- Having an =:if= property that evaluates to nil.
+
 Not all keywords are supported right now, but it can be extended to support more keywords.
