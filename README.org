@@ -1,0 +1,84 @@
+# -*- mode: org; mode: org-make-toc -*-
+* :tags keyword for use-package
+This library adds =:tags= keyword to =use-package=, which can be used
+to enable only packages that belong to certain groups.
+You can group packages using the keyword, and select packages
+to enable by setting =use-package-tags-current-profile= variable.
+
+It also provides a function for enumerating packages in a
+file/buffer based on tags.  This can be used to install packages
+for your init file without relying on =package.el=.
+
+#+BEGIN_HTML
+<img src="https://github.com/akirak/use-package-tags/workflows/CI/badge.svg" alt="CI">
+#+END_HTML
+** Table of contents
+:PROPERTIES:
+:TOC: siblings
+:END:
+-  [[#installation][Installation]]
+-  [[#usage][Usage]]
+  -  [[#tags-keyword-for-use-package][:tags keyword for use-package]]
+  -  [[#extracting-package-names-from-an-init-file][Extracting package names from an init file]]
+
+** Installation
+This package is not available on MELPA yet.
+** Usage
+*** =:tags= keyword for =use-package=
+#+begin_src emacs-lisp
+  (require 'use-package)
+  (use-package use-package-tags)
+
+  ;; Select packages using tags
+  ;; This can be put in your custom-file, but it should be set
+  ;; before you load use-package forms.
+  (setq use-package-tags-current-profile '(work))
+
+  ;; Since it has no :tags, this package is always enabled
+  (use-package lsp-mode)
+
+  ;; This package has a tag in the current profile, so it is enabled.
+  (use-package lsp-java
+    ;; You wouldn't want to write Java at home, so it is not enabled
+    ;; outside of work.
+    :tags (work))
+
+  ;; This package has no tag in the current profile, so it is disabled.
+  (use-package my-game-on-emacs
+    :tags (personal))
+#+end_src
+
+You can specify multiple tags in a =:tags= keyword field.
+If a package has at least one keyword in your current profile, it will be enabled.
+*** Extracting package names from an init file
+Another functionality provided by this package is to extract a list of packages from an initialization file.
+This feature is primarily intended for Nix users.
+You can get a list of all packages in =use-package= forms in a file, or select packages using tags:
+
+#+begin_src emacs-lisp
+  ;; Get a list of packages in the current buffer by tags
+  (use-package-tags-select '(programming blog))
+
+  ;; You can specify a file name using :from keyword
+  (use-package-tags-select '(programming blog)
+    :from (expand-file-name "init.el" user-emacs-directory))
+
+  ;; You can select all packages by passing t as the query
+  (use-package-tags-select t)
+
+  ;; If you set :installable to t, it returns packages on the registry
+  ;; (requires epkg.el)
+  (use-package-tags-select t :installable t)
+#+end_src
+
+You can save the result to a file:
+
+#+begin_src emacs-lisp
+  ;; Save the list of packages to packages.txt in plain text
+  (with-temp-buffer
+    (setq buffer-file-name "packages.txt")
+    (insert (use-package-tags-select t :from "init.el"
+                                     :installable t
+                                     :as 'lines))
+    (save-buffer))
+#+end_src
