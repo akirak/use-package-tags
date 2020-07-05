@@ -35,7 +35,7 @@
 
 (describe "use-package-tags-select"
   (let ((result (use-package-tags-select '(active foo)
-                  :from "./tests/init.el")))
+                                         :from "./tests/init.el")))
     (it "selects packages without :tags keyword"
       (expect (member 'a result) :to-be-truthy))
     (it "selects packages with an active keyword"
@@ -60,5 +60,14 @@
     (expect (use-package-tags-select t :from "./tests/init.el"
                                      :as 'lines)
             :to-equal "a\nb\nc\ntest")))
+
+(describe "use-package-tags--source-buffer-list (private function)"
+  (describe "When t is given"
+    (if (file-exists-p (expand-file-name "init.el" user-emacs-directory))
+        (it "returns use-package-tags-init-files"
+          (expect (mapcar #'buffer-file-name
+                          (use-package-tags--source-buffer-list t))
+                  :to-equal use-package-tags-init-files))
+      (xit "returns use-package-tags-init-files (the file does not exist)"))))
 
 (provide 'use-package-tag-test)

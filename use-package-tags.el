@@ -79,12 +79,43 @@ the conventions of use-package."
 
 ;;;; Extract package names from an init file
 
+(defcustom use-package-tags-init-files
+  (list (or user-init-file
+            (expand-file-name "init.el" user-emacs-directory)))
+  "List of files to look for package declarations."
+  :type '(repeat file))
+
 (defun use-package-tags--source-buffer-list (source)
-  "Return a list of buffers for SOURCE."
-  (cl-etypecase source
-    (null (list (current-buffer)))
-    (file-exists-p (list (or (find-buffer-visiting source)
-                             (find-file-noselect source))))))
+  "Return a list of buffers for SOURCE.
+
+If the argument is nil, it returns a list containing the current
+buffer.
+
+Alternatively, the argument can be one of the following:
+
+ * t for `use-package-tags-init-files'.
+ * File name.
+ * Buffer.
+ * List of files.
+ * List of buffers."
+  (cl-labels
+      ((to-buffer
+        (item)
+        (cl-etypecase item
+          (buffer item)
+          ;; (symbol (to-buffer (eval symbol)))
+          (file-exists (or (find-buffer-visiting item)
+                           (find-file-noselect item)))
+          (string (error "File does not exist: %s" item)))))
+    (cl-typecase source
+      (null (list (current-buffer)))
+      (symbol (if (eq t source)
+                  (mapcar #'to-buffer use-package-tags-init-files)
+                ;; TODO: Return the variable value when a symbol is given
+                ;; (list (to-buffer source))
+                (error "Symbol is not accepted: %s" source)))
+      (list (mapcar #'to-buffer source))
+      (otherwise (list (to-buffer source))))))
 
 (defsubst use-package-tags--normalize-query (query)
   "Normalize QUERY into a list or t."
@@ -117,8 +148,8 @@ at least one tag in the query or have no tags.  Alternatively, you
 can select all packages declared in the source by specifying t as
 the query.
 
-By default, the source is the current buffer.
-You can specify a file as the source by setting FROM to its file path.
+FROM specifies the source.
+See `use-package-tags--source-buffer-list'.
 
 When INSTALLABLE is set to non-nil, it returns a list of packages
 available on the Emacs-Mirror.  You will need epkg.el for this feature.
