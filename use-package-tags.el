@@ -79,6 +79,32 @@ the conventions of use-package."
 
 ;;;; Extract package names from an init file
 
+(defun use-package-tags--source-buffer-list (source)
+  "Return a list of buffers for SOURCE."
+  (cl-etypecase source
+    (null (list (current-buffer)))
+    (file-exists-p (list (or (find-buffer-visiting source)
+                             (find-file-noselect source))))))
+
+(defsubst use-package-tags--normalize-query (query)
+  "Normalize QUERY into a list or t."
+  (cl-etypecase query
+    (listp query)
+    (symbolp (or (eq t query)
+                 (list query)))))
+
+(defmacro use-package-tags--with-package-forms (buffers &rest progn)
+  "In BUFFERS, evaluate PROGN at every `use-package' form."
+  (declare (indent 1))
+  `(dolist (buf ,buffers)
+     (with-current-buffer buf
+       (save-excursion
+         (goto-char (point-min))
+         (while (re-search-forward (rx "(use-package" space) nil t)
+           (beginning-of-defun-raw)
+           ,@progn
+           (end-of-defun))))))
+
 (cl-defun use-package-tags-select (query &key from installable
                                          (as 'symbols))
   "Get a list of packages declared in `use-package' forms.
@@ -107,52 +133,40 @@ It accepts the following values (the default: symbols):
  * lines: a single string joined by newlines."
   (declare (indent 1))
   (let (alist
-        (bufs (cl-etypecase from
-                (null (list (current-buffer)))
-                (file-exists-p (list (or (find-buffer-visiting from)
-                                         (find-file-noselect from))))))
-        (query (cl-etypecase query
-                 (listp query)
-                 (symbolp (or (eq t query)
-                              (list query))))))
+        (query (use-package-tags--normalize-query query)))
     (cl-labels
         ((get-keyword (prop rest) (-some->> (member prop rest)
                                     (nth 1))))
-      (dolist (buf bufs)
-        (with-current-buffer buf
-          (save-excursion
-            (goto-char (point-min))
-            (while (re-search-forward (rx "(use-package" space) nil t)
-              (beginning-of-defun-raw)
-              (let* ((exp (read (current-buffer)))
-                     (name (nth 1 exp))
-                     (disabled (get-keyword :disabled exp))
-                     ;; TODO: Handle dependencies
-                     ;; (after (get-keyword :after))
-                     ;; (requires (get-keyword :requires))
-                     ;; TODO: Add support for :when and :unless
-                     (if-expr (get-keyword :if exp))
-                     (tags (get-keyword :tags exp)))
-                (when (and (not disabled)
-                           (not (and if-expr
-                                     (not (eval if-expr))))
-                           ;; TODO: :requires keyword
-                           ;; (or (not requires)
-                           ;;     (-all-p (lambda (feature)
-                           ;;               (assoc feature alist))
-                           ;;             (cl-etypecase requires
-                           ;;               (list requires)
-                           ;;               (symbol (list requires)))))
-                           (or (eq t query)
-                               (not tags)
-                               (cl-intersection tags query)))
-                  (push (list name)
-                        ;; TODO: Handle dependencies
-                        ;; (list name
-                        ;;       :after after
-                        ;;       :requires requires)
-                        alist)))
-              (end-of-defun))))))
+      (use-package-tags--with-package-forms
+          (use-package-tags--source-buffer-list from)
+        (let* ((exp (read (current-buffer)))
+               (name (nth 1 exp))
+               (disabled (get-keyword :disabled exp))
+               ;; TODO: Handle dependencies
+               ;; (after (get-keyword :after))
+               ;; (requires (get-keyword :requires))
+               ;; TODO: Add support for :when and :unless
+               (if-expr (get-keyword :if exp))
+               (tags (get-keyword :tags exp)))
+          (when (and (not disabled)
+                     (not (and if-expr
+                               (not (eval if-expr))))
+                     ;; TODO: :requires keyword
+                     ;; (or (not requires)
+                     ;;     (-all-p (lambda (feature)
+                     ;;               (assoc feature alist))
+                     ;;             (cl-etypecase requires
+                     ;;               (list requires)
+                     ;;               (symbol (list requires)))))
+                     (or (eq t query)
+                         (not tags)
+                         (cl-intersection tags query)))
+            (push (list name)
+                  ;; TODO: Handle dependencies
+                  ;; (list name
+                  ;;       :after after
+                  ;;       :requires requires)
+                  alist)))))
     (cl-labels
         ((enabled-p
           ;; The dependency handle is work in progress.
