@@ -63,6 +63,11 @@ You can get a list of all packages in =use-package= forms in a file, or select p
   (use-package-tags-select '(programming blog)
     :from (expand-file-name "init.el" user-emacs-directory))
 
+  ;; The :from argument also accepts t, which is evaluated to
+  ;; `use-package-tags-init-files' (default: user-init-file)
+  (use-package-tags-select '(programming blog)
+    :from t)
+
   ;; You can select all packages by passing t as the query
   (use-package-tags-select t)
 
@@ -89,3 +94,5 @@ The function handles some built-in keywords of =use-package= to exclude packages
 - Having an =:if= property that evaluates to nil.
 
 Not all keywords are supported right now, but it can be extended to support more keywords.
+
+This package also provides =use-package-tags-collect-tags= function, which returns a list of all tags in a source.
