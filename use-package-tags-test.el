@@ -61,6 +61,11 @@
                                      :as 'lines)
             :to-equal "a\nb\nc\ntest")))
 
+(describe "use-package-tags-collect"
+  (it "collects tags from a source"
+    (expect (use-package-tags-collect-tags "./tests/init.el" :sort t)
+            :to-equal '(active bar foo inactive))))
+
 (describe "use-package-tags--source-buffer-list (private function)"
   (describe "When t is given"
     (if (file-exists-p (expand-file-name "init.el" user-emacs-directory))

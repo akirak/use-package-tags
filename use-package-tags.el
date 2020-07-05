@@ -266,5 +266,29 @@ It accepts the following values (the default: symbols):
          (delq nil)
          (-uniq))))
 
+;;;###autoload
+(cl-defun use-package-tags-collect-tags (source &key sort)
+  "Collect package tags from a source.
+
+For SOURCE, see `use-package-tags--source-buffer-list'.
+
+If SORT is non-nil, the result will be lexicographically sorted."
+  (cl-labels
+      ((get-keyword (prop rest) (-some->> (member prop rest)
+                                  (nth 1)))
+       (order (items) (if sort
+                          (cl-sort items #'string< :key #'symbol-name)
+                        items)))
+    (let (result)
+      (use-package-tags--with-package-forms
+          (use-package-tags--source-buffer-list source)
+        (let* ((exp (read (current-buffer)))
+               (tags (get-keyword :tags exp)))
+          (when tags
+            (push tags result))))
+      (->> (-flatten-n 1 result)
+           (cl-remove-duplicates)
+           (order)))))
+
 (provide 'use-package-tags)
 ;;; use-package-tags.el ends here
