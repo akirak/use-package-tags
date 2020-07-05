@@ -136,6 +136,7 @@ Alternatively, the argument can be one of the following:
            ,@progn
            (end-of-defun))))))
 
+;;;###autoload
 (cl-defun use-package-tags-select (query &key from installable
                                          (as 'symbols))
   "Get a list of packages declared in `use-package' forms.
