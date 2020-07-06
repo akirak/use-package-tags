@@ -6,7 +6,7 @@ to enable by setting =use-package-tags-current-profile= variable.
 
 It also provides a function for enumerating packages in a
 file/buffer based on tags.  This can be used to install packages
-for your init file without relying on =package.el=.
+for your init file without relying on =package.el=, e.g. in Nix.
 
 #+BEGIN_HTML
 <img src="https://github.com/akirak/use-package-tags/workflows/CI/badge.svg" alt="CI">
