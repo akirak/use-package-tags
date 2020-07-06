@@ -66,6 +66,13 @@
     (expect (use-package-tags-collect-tags "./tests/init.el" :sort t)
             :to-equal '(active bar foo inactive))))
 
+(describe "use-package-tags-load"
+  (xit "loads packages with a tag and add the tag to the profile")
+  (xit "If an error occurs, don't add the tag to the profile"))
+
+(describe "use-package-tags--unloaded-tags (private function)"
+  (xit "returns tags that are not in the profile"))
+
 (describe "use-package-tags--source-buffer-list (private function)"
   (describe "When t is given"
     (if (file-exists-p (expand-file-name "init.el" user-emacs-directory))
