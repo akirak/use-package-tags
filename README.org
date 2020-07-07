@@ -93,5 +93,9 @@ The function handles some built-in keywords of =use-package= to exclude packages
 - Having an =:if= property that evaluates to nil.
 
 Not all keywords are supported right now, but it can be extended to support more keywords.
-
-This package also provides =use-package-tags-collect-tags= function, which returns a list of all tags in a source.
+*** Loading packages by a tag
+:PROPERTIES:
+:CREATED_TIME: [2020-07-06 Mon 23:11]
+:END:
+Finally, this package allows you to incrementally load packages with a tag.
+After you configure =use-package-tags-init-files= variable, =use-package-tags-load= command displays a list of tags that are not in the current profile (i.e. =use-package-tags-current-profile=) and loads all packages with a tag in the files.

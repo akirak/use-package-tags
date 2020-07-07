@@ -72,7 +72,7 @@
 NAME, _KEYWORD, TAGS, REST, and STATE are arguments that follow
 the conventions of use-package."
   (let ((body (use-package-process-keywords name rest state)))
-    (if tags
+    (if (and load-in-progress tags)
         `((when (cl-intersection ,tags use-package-tags-current-profile)
             ,@body))
       body)))
@@ -289,6 +289,45 @@ If SORT is non-nil, the result will be lexicographically sorted."
       (->> (-flatten-n 1 result)
            (cl-remove-duplicates)
            (order)))))
+
+(defun use-package-tags--unloaded-tags ()
+  "Return a list of tags that are not in the current profile."
+  (-difference (use-package-tags-collect-tags t :sort t)
+               use-package-tags-current-profile))
+
+;;;###autoload
+(defun use-package-tags-load (tag)
+  "Load packages with a TAG.
+
+This function evalates `use-package' forms with the selected tag
+in `use-package-tags-init-files'.
+
+After successfully loading all matching packages, the tag will be
+added to `use-package-tags-current-profile', without saving the value
+to `custom-file'."
+  (interactive (list (completing-read "Load packages with tag: "
+                                      (use-package-tags--unloaded-tags)
+                                      nil 'match)))
+  (cl-labels
+      ((get-keyword (prop rest) (-some->> (member prop rest)
+                                  (nth 1)))
+       (has-tag-p (tag rest)
+                  (let ((tags (cdr (get-keyword :tags rest))))
+                    (memq tag (cl-etypecase tags
+                                (list tags)
+                                (symbol (list tags)))))))
+    (setq tag (cl-etypecase tag
+                (tag tag)
+                (string (intern tag))))
+    (use-package-tags--with-package-forms
+     (use-package-tags--source-buffer-list t)
+     (let ((exp (read (current-buffer))))
+       (when (has-tag-p tag exp)
+         (message "Loading package %s configured at %s..."
+                  (nth 1 exp)
+                  (abbreviate-file-name (buffer-file-name)))
+         (eval exp))))
+    (push tag use-package-tags-current-profile)))
 
 (provide 'use-package-tags)
 ;;; use-package-tags.el ends here
