@@ -72,7 +72,7 @@
 NAME, _KEYWORD, TAGS, REST, and STATE are arguments that follow
 the conventions of use-package."
   (let ((body (use-package-process-keywords name rest state)))
-    (if tags
+    (if (and load-in-progress tags)
         `((when (cl-intersection ,tags use-package-tags-current-profile)
             ,@body))
       body)))
@@ -319,20 +319,15 @@ to `custom-file'."
     (setq tag (cl-etypecase tag
                 (tag tag)
                 (string (intern tag))))
-    (push tag use-package-tags-current-profile)
-    (condition-case err
-        (use-package-tags--with-package-forms
-            (use-package-tags--source-buffer-list t)
-          (let ((exp (read (current-buffer))))
-            (when (has-tag-p tag exp)
-              (message "Loading package %s configured at %s..."
-                       (nth 1 exp)
-                       (abbreviate-file-name (buffer-file-name)))
-              (eval exp))))
-      (error (progn
-               (message "Error while loading the package: %s" err)
-               (cl-delete tag use-package-tags-current-profile)
-               (error err))))))
+    (use-package-tags--with-package-forms
+     (use-package-tags--source-buffer-list t)
+     (let ((exp (read (current-buffer))))
+       (when (has-tag-p tag exp)
+         (message "Loading package %s configured at %s..."
+                  (nth 1 exp)
+                  (abbreviate-file-name (buffer-file-name)))
+         (eval exp))))
+    (push tag use-package-tags-current-profile)))
 
 (provide 'use-package-tags)
 ;;; use-package-tags.el ends here
